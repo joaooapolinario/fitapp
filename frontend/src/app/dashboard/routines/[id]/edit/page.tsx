@@ -9,13 +9,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-interface RoutineItem {
-  tempId: number; 
-  exerciseId: string;
-  sets: number;
-  reps: number;
-}
+import { ExercisePicker } from '@/components/exercise-picker'; // Novo Picker
+import { Exercise, RoutineItem } from '@/types'; // Tipos Globais
 
 export default function EditRoutinePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -44,13 +39,15 @@ export default function EditRoutinePage({ params }: { params: Promise<{ id: stri
       
       // Transforma os itens do banco no formato do nosso formulário
       const formattedItems = r.items.map((item: any) => ({
-        tempId: Math.random(),
+        tempId: Math.random(), // Gera ID temporário para o React
         exerciseId: item.exerciseId,
         sets: item.sets,
         reps: item.reps
       }));
       setItems(formattedItems);
-    }).finally(() => setLoading(false));
+    })
+    .catch(err => console.error(err))
+    .finally(() => setLoading(false));
   }, [routineId, router]);
 
   // --- MÉTODOS DE MANIPULAÇÃO (IGUAIS AO CREATE) ---
@@ -102,43 +99,76 @@ export default function EditRoutinePage({ params }: { params: Promise<{ id: stri
 
   if (loading) return <div className="p-8">Carregando...</div>;
 
-  return (
+   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">
-        <div className="flex justify-between">
+        <div className="flex justify-between items-center">
             <h1 className="text-2xl font-bold">Editar Ficha</h1>
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
+            <Button variant="outline" onClick={() => router.push(`/dashboard/routines/${routineId}`)}>Cancelar</Button>
         </div>
 
         <Card><CardContent className="pt-6">
             <Label>Nome da Rotina</Label>
-            <Input value={routineName} onChange={e => setRoutineName(e.target.value)} />
+            <Input value={routineName} onChange={e => setRoutineName(e.target.value)} className="mt-2 text-lg font-medium"/>
         </CardContent></Card>
 
         <div className="space-y-3">
+          <Label className="text-lg">Exercícios</Label>
           {items.map((item, index) => (
-            <Card key={item.tempId}>
+            <Card key={item.tempId} className="relative group">
               <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-end">
-                <div className="font-bold text-slate-300">#{index+1}</div>
+                
+                <div className="font-bold text-slate-300 text-xl w-6">#{index+1}</div>
+                
                 <div className="flex-1 w-full">
-                  <Label>Exercício</Label>
-                  <Select value={item.exerciseId} onValueChange={(v) => updateLine(item.tempId, 'exerciseId', v)}>
-                    <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                    <SelectContent>
-                      {exercisesList.map(ex => <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                  <Label className="text-xs text-slate-500 mb-1 block">Exercício</Label>
+                  {item.exerciseId ? (
+                    <div className="flex items-center justify-between border p-2 rounded-md bg-white">
+                      <span className="font-medium">
+                         {exercisesList.find(e => e.id === item.exerciseId)?.name || 'Desconhecido'}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-xs text-blue-600 hover:text-blue-800"
+                        onClick={() => updateLine(item.tempId!, 'exerciseId', '')}
+                      >
+                        Trocar
+                      </Button>
+                    </div>
+                  ) : (
+                    <ExercisePicker 
+                      exercises={exercisesList} 
+                      onSelect={(id) => updateLine(item.tempId!, 'exerciseId', id)}
+                      triggerButton={
+                        <Button variant="outline" className="w-full justify-start text-slate-500 font-normal">
+                          🔍 Clique para buscar exercício...
+                        </Button>
+                      }
+                    />
+                  )}
                 </div>
-                <div className="w-24"><Label>Séries</Label><Input type="number" value={item.sets} onChange={e => updateLine(item.tempId, 'sets', e.target.value)} /></div>
-                <div className="w-24"><Label>Reps</Label><Input type="number" value={item.reps} onChange={e => updateLine(item.tempId, 'reps', e.target.value)} /></div>
-                <Button variant="destructive" onClick={() => removeLine(item.tempId)}>X</Button>
+
+                <div className="w-24">
+                  <Label className="text-xs text-slate-500 mb-1 block">Séries</Label>
+                  <Input type="number" value={item.sets} onChange={e => updateLine(item.tempId!, 'sets', Number(e.target.value))} />
+                </div>
+                
+                <div className="w-24">
+                  <Label className="text-xs text-slate-500 mb-1 block">Reps</Label>
+                  <Input type="number" value={item.reps} onChange={e => updateLine(item.tempId!, 'reps', Number(e.target.value))} />
+                </div>
+                
+                <Button variant="destructive" size="icon" onClick={() => removeLine(item.tempId!)} className="shrink-0">X</Button>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <Button variant="outline" className="w-full py-4" onClick={addNewLine}>+ Adicionar Exercício</Button>
-        <Button className="w-full py-6 text-lg bg-amber-600 hover:bg-amber-700" onClick={handleUpdate}>Salvar Alterações</Button>
+        <div className="flex flex-col gap-4">
+            <Button variant="outline" className="w-full border-dashed border-2 py-6 text-slate-500" onClick={addNewLine}>+ Adicionar Exercício</Button>
+            <Button className="w-full py-6 text-lg bg-amber-600 hover:bg-amber-700" onClick={handleUpdate}>Salvar Alterações</Button>
+        </div>
       </div>
     </div>
   );

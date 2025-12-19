@@ -15,20 +15,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-
-// Tipos
-interface Exercise {
-  id: string;
-  name: string;
-}
-
-// Estrutura de um item da lista temporária
-interface RoutineItem {
-  tempId: number; // Um ID falso só para o React organizar a lista na tela
-  exerciseId: string;
-  sets: number;
-  reps: number;
-}
+import { ExercisePicker } from '@/components/exercise-picker';
+import { Exercise, RoutineItem } from '@/types'
 
 export default function CreateRoutinePage() {
   const router = useRouter();
@@ -107,7 +95,6 @@ export default function CreateRoutinePage() {
           <Button variant="outline" onClick={() => router.push('/dashboard')}>Cancelar</Button>
         </div>
 
-  
         <Card>
           <CardContent className="pt-6">
             <Label>Nome da Rotina</Label>
@@ -120,7 +107,6 @@ export default function CreateRoutinePage() {
           </CardContent>
         </Card>
 
-        
         <div className="space-y-3">
           <Label className="text-lg">Exercícios</Label>
           
@@ -128,36 +114,49 @@ export default function CreateRoutinePage() {
             <Card key={item.tempId} className="relative group">
               <CardContent className="p-4 flex flex-col md:flex-row gap-4 items-end">
                 
-                
                 <div className="font-bold text-slate-300 text-xl w-6">
                   #{index + 1}
                 </div>
 
-                
                 <div className="flex-1 w-full">
                   <Label className="text-xs text-slate-500 mb-1 block">Exercício</Label>
-                  <Select 
-                    value={item.exerciseId} 
-                    onValueChange={(val) => updateLine(item.tempId, 'exerciseId', val)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {exercisesList.map(ex => (
-                        <SelectItem key={ex.id} value={ex.id}>{ex.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  
+                  {item.exerciseId ? (
+                    <div className="flex items-center justify-between border p-2 rounded-md bg-white">
+                      <span className="font-medium">
+                         {exercisesList.find(e => e.id === item.exerciseId)?.name || 'Desconhecido'}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-xs text-blue-600 hover:text-blue-800"
+                        // ADICIONADO "!" AQUI VVV
+                        onClick={() => updateLine(item.tempId!, 'exerciseId', '')}
+                      >
+                        Trocar
+                      </Button>
+                    </div>
+                  ) : (
+                    <ExercisePicker 
+                      exercises={exercisesList} 
+                      // ADICIONADO "!" AQUI VVV
+                      onSelect={(id) => updateLine(item.tempId!, 'exerciseId', id)}
+                      triggerButton={
+                        <Button variant="outline" className="w-full justify-start text-slate-500 font-normal">
+                          🔍 Clique para buscar exercício...
+                        </Button>
+                      }
+                    />
+                  )}
                 </div>
 
-                
                 <div className="w-24">
                   <Label className="text-xs text-slate-500 mb-1 block">Séries</Label>
                   <Input 
                     type="number" 
                     value={item.sets} 
-                    onChange={e => updateLine(item.tempId, 'sets', Number(e.target.value))} 
+                    // ADICIONADO "!" AQUI VVV
+                    onChange={e => updateLine(item.tempId!, 'sets', Number(e.target.value))} 
                   />
                 </div>
 
@@ -166,15 +165,16 @@ export default function CreateRoutinePage() {
                   <Input 
                     type="number" 
                     value={item.reps} 
-                    onChange={e => updateLine(item.tempId, 'reps', Number(e.target.value))} 
+                    // ADICIONADO "!" AQUI VVV
+                    onChange={e => updateLine(item.tempId!, 'reps', Number(e.target.value))} 
                   />
                 </div>
 
-                
                 <Button 
                   variant="destructive" 
                   size="icon"
-                  onClick={() => removeLine(item.tempId)}
+                  // ADICIONADO "!" AQUI VVV
+                  onClick={() => removeLine(item.tempId!)}
                   className="shrink-0"
                 >
                   X
@@ -184,7 +184,6 @@ export default function CreateRoutinePage() {
           ))}
         </div>
 
-        
         <div className="flex flex-col gap-4">
           <Button 
             variant="outline" 
